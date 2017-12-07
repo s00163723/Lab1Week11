@@ -1,9 +1,12 @@
 namespace Lab1Week11.Migrations.ApplicationUsers
 {
+    using Models;
+    using Microsoft.AspNet.Identity;
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Migrations;
     using System.Linq;
+    using Microsoft.AspNet.Identity.EntityFramework;
 
     internal sealed class Configuration : DbMigrationsConfiguration<Lab1Week11.Models.ApplicationDbContext>
     {
@@ -15,18 +18,72 @@ namespace Lab1Week11.Migrations.ApplicationUsers
 
         protected override void Seed(Lab1Week11.Models.ApplicationDbContext context)
         {
-            //  This method will be called after migrating to the latest version.
+            var manager =
+                 new UserManager<ApplicationUser>(
+                     new UserStore<ApplicationUser>(context));
 
-            //  You can use the DbSet<T>.AddOrUpdate() helper extension method 
-            //  to avoid creating duplicate seed data. E.g.
-            //
-            //    context.People.AddOrUpdate(
-            //      p => p.FullName,
-            //      new Person { FullName = "Andrew Peters" },
-            //      new Person { FullName = "Brice Lambson" },
-            //      new Person { FullName = "Rowan Miller" }
-            //    );
-            //
+            var roleManager =
+                new RoleManager<IdentityRole>(
+                    new RoleStore<IdentityRole>(context));
+
+
+
+            roleManager.Create(new IdentityRole { Name = "Admin" });
+            roleManager.Create(new IdentityRole { Name = "ClubAdmin" });
+            roleManager.Create(new IdentityRole { Name = "Member" });
+
+            context.Users.AddOrUpdate(u => u.Email, new ApplicationUser
+            {
+                Email = "S12345678@mail.itsligo.ie",
+                EmailConfirmed = true,
+                UserName = "S12345678@mail.itsligo.ie",
+                PasswordHash = new PasswordHasher().HashPassword("Ss1234567$1"),
+                SecurityStamp = Guid.NewGuid().ToString(),
+            });
+
+            context.Users.AddOrUpdate(u => u.Email, new ApplicationUser
+            {
+                Email = "powell.paul@itsligo.ie",
+                EmailConfirmed = true,
+                UserName = "powell.paul@itsligo.ie",
+                PasswordHash = new PasswordHasher().HashPassword("Ppowell$1"),
+                SecurityStamp = Guid.NewGuid().ToString(),
+            });
+
+            context.Users.AddOrUpdate(u => u.Email, new ApplicationUser
+            {
+
+                Email = "S00000001@mail.itsligo.ie",
+                EmailConfirmed = true,
+                UserName = "S00000001@mail.itsligo.ie",
+                PasswordHash = new PasswordHasher().HashPassword("SS00000001$1"),
+                SecurityStamp = Guid.NewGuid().ToString(),
+            });
+            context.SaveChanges();
+            ApplicationUser admin = manager.FindByEmail("powell.paul@itsligo.ie");
+            if (admin != null)
+            {
+                manager.AddToRoles(admin.Id, new string[] { "Admin", "Member", "ClubAdmin" });
+            }
+            else
+            {
+                throw new Exception { Source = "Did not find user" };
+            }
+
+            ApplicationUser member = manager.FindByEmail("S12345678@mail.itsligo.ie");
+            if (member != null)
+            {
+                manager.AddToRoles(member.Id, new string[] { "Member" });
+            }
+
+            ApplicationUser clubAdmin = manager.FindByEmail("S00000001@mail.itsligo.ie");
+            if (manager.FindByEmail("S00000001@mail.itsligo.ie") != null)
+            {
+                manager.AddToRoles(clubAdmin.Id, new string[] { "ClubAdmin" });
+            }
+
         }
+
+
     }
 }
